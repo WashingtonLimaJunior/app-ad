@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Button, Image, Text, StyleSheet } from 'react-native';
+import { View, Button, Image, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AudioDescription = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadImageLocally();
+    requestPermission();
+  }, []);
+
+  const requestPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão necessária', 'Precisamos de acesso à sua biblioteca de imagens para continuar.');
+    }
+  };
 
   const saveImageLocally = async (imageUri: string) => {
     try {
@@ -30,53 +41,59 @@ const AudioDescription = () => {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-  
-    if (!result.canceled && result.assets.length > 0) {
+
+    if (!result.canceled) {
       const pickedImageUri = result.assets[0].uri;
-      const file = await uriToFile(pickedImageUri);
-      const formData = toFormData(file);
-      setSelectedImage(pickedImageUri); // Define a imagem selecionada
-      saveImageLocally(pickedImageUri); // Salva a imagem localmente
-      // Envie o formData para o servidor usando axios
-      axios.post('http://localhost:3000/describe', formData, {
+      setSelectedImage(pickedImageUri);
+      saveImageLocally(pickedImageUri);
+      await uploadImage(pickedImageUri);
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    let uriParts = uri.split('.');
+    let fileType = uriParts[uriParts.length - 1];
+
+    let formData = new FormData();
+    formData.append('upload', {
+      uri,
+      name: `photo.${fileType}`,
+      type: `image/${fileType}`,
+    } as any); // Type assertion for TypeScript
+
+    try {
+      console.log('Enviando imagem para o servidor...');
+      console.log('Form Data:', formData);
+      const response = await fetch('https://5110-168-0-235-65.ngrok-free.app/describe', {
+        method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      })
-      .then(response => {
-        setDescription(response.data.description);
-      })
-      .catch(error => {
-        console.error(error);
+        body: formData,
       });
+      if (!response.ok) {
+        throw new Error(`Erro na resposta da rede: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('Resposta do servidor:', data);
+      setDescription(data.description);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Erro ao descrever imagem:', error.message);
+      } else {
+        console.error('Erro desconhecido:', error);
+      }
     }
   };
-  
-  async function uriToFile(uri: string): Promise<File> {
-    return fetch(uri)
-      .then(response => response.blob())
-      .then(blob => new File([blob], 'image.jpg'));
-  }
-  
-  function toFormData(file: File) {
-    const formData = new FormData();
-    formData.append('upload', file);
-    return formData;
-  }
-  
-
-  useEffect(() => {
-    loadImageLocally();
-  }, []);
 
   return (
     <View style={styles.container}>
-      <Button title="Pick an image" onPress={pickImage} />
+      <Button title="Escolher uma imagem" onPress={pickImage} />
       {selectedImage && <Image source={{ uri: selectedImage }} style={styles.image} />}
       {description && <Text style={styles.description}>{description}</Text>}
     </View>
