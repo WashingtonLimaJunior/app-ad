@@ -96,7 +96,7 @@ app.post('/describe', upload.single('upload'), async (req, res) => {
     // Converter a descrição em fala
     const audioFilePath = await convertTextToSpeech(description);
 
-    res.json({ description, audioPath: `https://5110-168-0-235-65.ngrok-free.app/audio` });
+    res.json({ description, audioPath: `https://f456-170-81-131-230.ngrok-free.app/audio` });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Error processing the image');

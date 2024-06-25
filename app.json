@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "my-audiodescription-app",
+    "name": "Whats's Here?",
     "slug": "my-audiodescription-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -60,7 +60,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

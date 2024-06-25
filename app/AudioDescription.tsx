@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Button, Image, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, Alert, TouchableOpacity, ImageBackground } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 
 const AudioDescription = () => {
@@ -12,7 +11,6 @@ const AudioDescription = () => {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
 
   useEffect(() => {
-    loadImageLocally();
     requestPermission();
     return () => {
       if (sound) {
@@ -22,45 +20,23 @@ const AudioDescription = () => {
   }, []);
 
   const requestPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Precisamos de acesso à sua biblioteca de imagens para continuar.');
+      Alert.alert('Permissão necessária', 'Precisamos de acesso à sua câmera para continuar.');
     }
   };
 
-  const saveImageLocally = async (imageUri: string) => {
-    try {
-      await AsyncStorage.setItem('selectedImage', imageUri);
-      console.log('Imagem salva localmente:', imageUri);
-    } catch (error) {
-      console.error('Erro ao salvar imagem localmente:', error);
-    }
-  };
-
-  const loadImageLocally = async () => {
-    try {
-      const imageUri = await AsyncStorage.getItem('selectedImage');
-      if (imageUri) {
-        setSelectedImage(imageUri);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar imagem localmente:', error);
-    }
-  };
-
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+  const captureAndUploadImage = async () => {
+    let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false, // Não permite edição
       quality: 1,
     });
 
     if (!result.canceled) {
-      const pickedImageUri = result.assets[0].uri;
-      setSelectedImage(pickedImageUri);
-      saveImageLocally(pickedImageUri);
-      await uploadImage(pickedImageUri);
+      const capturedImageUri = result.assets[0].uri;
+      setSelectedImage(capturedImageUri);
+      await uploadImage(capturedImageUri);
     }
   };
 
@@ -77,7 +53,7 @@ const AudioDescription = () => {
 
     try {
       console.log('Enviando imagem para o servidor...');
-      const response = await fetch('https://5110-168-0-235-65.ngrok-free.app/describe', {
+      const response = await fetch('https://f456-170-81-131-230.ngrok-free.app/describe', {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -121,24 +97,46 @@ const AudioDescription = () => {
   };
 
   return (
+    <ImageBackground source={require('../assets/AD.jpg')} style={styles.background}>
     <View style={styles.container}>
-      <Button title="Escolher uma imagem" onPress={pickImage} />
+      <TouchableOpacity style={styles.button} onPress={captureAndUploadImage}>
+        <Text style={styles.buttonText}>Abrir câmera</Text>
+      </TouchableOpacity>
       {selectedImage && <Image source={{ uri: selectedImage }} style={styles.image} />}
-      {description && <Text style={styles.description}>{description}</Text>}
+      {/* {description && <Text style={styles.description}>{description}</Text>}
       {audioPath && audioDuration && (
         <Text style={styles.audioInfo}>
           Reproduzindo áudio no caminho: {audioPath} com duração de: {audioDuration} segundos
         </Text>
-      )}
+      )} */}
     </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
+    // opacity: 0.7, // Define a opacidade da imagem (valor entre 0 e 1)
+  },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: '80%' ,
+  },
+  button: {
+    backgroundColor: '#347344',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
   },
   image: {
     width: 200,
