@@ -53,7 +53,7 @@ const AudioDescription = () => {
 
     try {
       console.log('Enviando imagem para o servidor...');
-      const response = await fetch('https://f456-170-81-131-230.ngrok-free.app/describe', {
+      const response = await fetch('https://9dae-2804-14d-5890-9f06-9d98-b490-562a-bd64.ngrok-free.app/describe', {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -103,12 +103,12 @@ const AudioDescription = () => {
         <Text style={styles.buttonText}>Abrir câmera</Text>
       </TouchableOpacity>
       {selectedImage && <Image source={{ uri: selectedImage }} style={styles.image} />}
-      {/* {description && <Text style={styles.description}>{description}</Text>}
+      {description && <Text style={styles.description}>{description}</Text>}
       {audioPath && audioDuration && (
         <Text style={styles.audioInfo}>
           Reproduzindo áudio no caminho: {audioPath} com duração de: {audioDuration} segundos
         </Text>
-      )} */}
+      )}
     </View>
     </ImageBackground>
   );
