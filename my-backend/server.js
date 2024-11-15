@@ -60,25 +60,6 @@ const describeImage = async (imagePath) => {
   }
 };
 
-// Função para converter texto em fala usando a API do Google Cloud Text-to-Speech
-const convertTextToSpeech = async (text) => {
-  const apiKey = process.env.GOOGLE_API_KEY;
-
-  const response = await axios.post(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-    input: { text },
-    voice: { languageCode: 'pt-BR', ssmlGender: 'FEMALE' },
-    audioConfig: { audioEncoding: 'MP3' },
-  });
-
-  const audioContent = response.data.audioContent;
-  const buffer = Buffer.from(audioContent, 'base64');
-  const filePath = path.join(__dirname, 'public', 'output.mp3');
-  
-  fs.writeFileSync(filePath, buffer);
-  console.log('Audio content written to file:', filePath);
-  return 'output.mp3';
-};
-
 app.post('/describe', upload.single('upload'), async (req, res) => {
   try {
     console.log('Request received');
@@ -93,20 +74,12 @@ app.post('/describe', upload.single('upload'), async (req, res) => {
     // Enviar a imagem para a API do OpenAI e obter a descrição
     const description = await describeImage(imagePath);
 
-    // Converter a descrição em fala
-    const audioFilePath = await convertTextToSpeech(description);
-
-    res.json({ description, audioPath: `https://9dae-2804-14d-5890-9f06-9d98-b490-562a-bd64.ngrok-free.app/audio` });
+    // Responder com a descrição apenas (sem áudio)
+    res.json({ description });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Error processing the image');
   }
-});
-
-// Rota específica para servir o arquivo de áudio
-app.get('/audio', (req, res) => {
-  const filePath = path.join(__dirname, 'public', 'output.mp3');
-  res.sendFile(filePath);
 });
 
 app.listen(port, () => {
